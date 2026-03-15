@@ -1,9 +1,14 @@
 import { streamText } from "ai"
 import { createOpenAI } from "@ai-sdk/openai"
 
+// Validate API key at startup
+const apiKey = process.env.OPENAI_API_KEY
+if (!apiKey) {
+  console.warn("Warning: OPENAI_API_KEY environment variable is not set. Chat functionality will not work.")
+}
+
 const openai = createOpenAI({
-  apiKey:
-    "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",
+  apiKey: apiKey || "",
 })
 
 export async function POST(req: Request) {
