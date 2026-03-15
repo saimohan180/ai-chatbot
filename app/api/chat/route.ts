@@ -24,6 +24,8 @@ const DEFAULT_MODELS: Record<string, string> = {
   custom: "gpt-4o",
 }
 
+const ALLOWED_PROVIDERS = new Set(["openai", "anthropic", "google", "groq", "mistral", "together", "perplexity", "deepseek", "azure", "custom"])
+
 function createModel(provider: string, apiKey: string, model?: string, baseUrl?: string) {
   const modelId = model || DEFAULT_MODELS[provider] || "gpt-4o"
 
@@ -53,6 +55,13 @@ export async function POST(req: Request) {
     if (!apiKey || !provider) {
       return new Response(
         JSON.stringify({ error: "No API key configured. Please add an API key in your Profile settings." }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      )
+    }
+
+    if (!ALLOWED_PROVIDERS.has(provider)) {
+      return new Response(
+        JSON.stringify({ error: "Unsupported provider. Please select a valid AI provider." }),
         { status: 400, headers: { "Content-Type": "application/json" } },
       )
     }

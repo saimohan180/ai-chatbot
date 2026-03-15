@@ -77,17 +77,25 @@ export default function DashboardPage() {
 
     const savedReminders = localStorage.getItem("ai-tutor-reminders")
     if (savedReminders) {
-      setReminders(JSON.parse(savedReminders))
+      try {
+        setReminders(JSON.parse(savedReminders))
+      } catch {
+        // ignore corrupted data
+      }
     }
 
     // Load active API key config
     if (userData) {
-      const parsedUser = JSON.parse(userData)
-      const savedKeys: ApiKeyConfig[] = JSON.parse(
-        localStorage.getItem(`ai-tutor-api-keys-${parsedUser.id}`) || "[]",
-      )
-      const active = savedKeys.find((k) => k.isActive) || null
-      setActiveApiKey(active)
+      try {
+        const parsedUser = JSON.parse(userData)
+        const savedKeys: ApiKeyConfig[] = JSON.parse(
+          localStorage.getItem(`ai-tutor-api-keys-${parsedUser.id}`) || "[]",
+        )
+        const active = savedKeys.find((k) => k.isActive) || null
+        setActiveApiKey(active)
+      } catch {
+        // ignore corrupted data
+      }
     }
   }, [])
 
@@ -101,7 +109,7 @@ export default function DashboardPage() {
     if (!activeApiKey) {
       const noKeyMessage: Message = {
         id: Date.now().toString(),
-        content: "⚠️ No API key configured. Please go to your Profile → Settings → API Keys and add an API key to start chatting.",
+        content: "⚠️ No API key configured. Please go to your Profile → API Keys tab and add an API key to start chatting.",
         sender: "ai",
         timestamp: new Date(),
       }
@@ -445,7 +453,7 @@ export default function DashboardPage() {
                   <span>
                     No API key configured.{" "}
                     <button onClick={() => router.push("/profile")} className="font-medium underline">
-                      Add one in Profile → Settings
+                      Add one in Profile → API Keys
                     </button>{" "}
                     to start chatting.
                   </span>

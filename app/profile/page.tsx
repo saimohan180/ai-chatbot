@@ -110,12 +110,17 @@ export default function ProfilePage() {
     // Load user profile
     const userData = localStorage.getItem("ai-tutor-user")
     if (userData) {
+      try {
       const user = JSON.parse(userData)
 
       // Get or create extended profile
       const savedProfile = localStorage.getItem(`ai-tutor-profile-${user.id}`)
       if (savedProfile) {
-        setProfile(JSON.parse(savedProfile))
+        try {
+          setProfile(JSON.parse(savedProfile))
+        } catch {
+          // ignore corrupted profile data
+        }
       } else {
         // Create default profile
         const defaultProfile: UserProfile = {
@@ -146,7 +151,14 @@ export default function ProfilePage() {
       // Load API keys
       const savedKeys = localStorage.getItem(`ai-tutor-api-keys-${user.id}`)
       if (savedKeys) {
-        setApiKeys(JSON.parse(savedKeys))
+        try {
+          setApiKeys(JSON.parse(savedKeys))
+        } catch {
+          // ignore corrupted data
+        }
+      }
+      } catch {
+        // ignore corrupted user data
       }
     }
   }, [])
@@ -229,7 +241,7 @@ export default function ProfilePage() {
     }
 
     const newKey: ApiKeyConfig = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       label: newKeyForm.label.trim(),
       provider: newKeyForm.provider,
       apiKey: newKeyForm.apiKey.trim(),
