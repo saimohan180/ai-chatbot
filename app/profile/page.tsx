@@ -40,6 +40,7 @@ interface UserProfile {
   subjects: string[]
   studyGoal: string
   avatar?: string
+  createdAt?: string
   preferences: {
     notifications: boolean
     darkMode: boolean
@@ -87,6 +88,7 @@ export default function ProfilePage() {
           grade: "",
           subjects: [],
           studyGoal: "",
+          createdAt: user.createdAt || new Date().toISOString(),
           preferences: {
             notifications: true,
             darkMode: false,
@@ -542,7 +544,12 @@ export default function ProfilePage() {
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                       <p className="font-medium mb-1 dark:text-white">Account Created</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {new Date(parseInt(profile.id)).toLocaleDateString()}
+                        {profile.createdAt 
+                          ? new Date(profile.createdAt).toLocaleDateString()
+                          : !isNaN(parseInt(profile.id)) && parseInt(profile.id) > 1000000000000
+                            ? new Date(parseInt(profile.id)).toLocaleDateString()
+                            : "Unknown"
+                        }
                       </p>
                     </div>
                     <Button 

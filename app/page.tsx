@@ -38,7 +38,11 @@ export default function LoginPage() {
       })
       return false
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    // More comprehensive email validation regex
+    // Allows for: letters, numbers, dots, hyphens, underscores, plus signs in local part
+    // Requires at least one character before and after @, and a dot with at least 2 chars after
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+    if (!emailRegex.test(email)) {
       toast({
         title: "Validation Error",
         description: "Please enter a valid email address.",
