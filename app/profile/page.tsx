@@ -26,8 +26,39 @@ import {
   Shield,
   BarChart3,
   Zap,
+  Key,
+  Plus,
+  Trash2,
+  Eye,
+  EyeOff,
+  CheckCircle,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+
+interface ApiKeyConfig {
+  id: string
+  label: string
+  provider: string
+  apiKey: string
+  model?: string
+  baseUrl?: string
+  isActive: boolean
+}
+
+const MAX_API_KEYS = 10
+
+const PROVIDERS = [
+  { value: "openai", label: "OpenAI", placeholder: "sk-..." },
+  { value: "anthropic", label: "Anthropic", placeholder: "sk-ant-..." },
+  { value: "google", label: "Google AI", placeholder: "AIza..." },
+  { value: "groq", label: "Groq", placeholder: "gsk_..." },
+  { value: "mistral", label: "Mistral", placeholder: "..." },
+  { value: "together", label: "Together AI", placeholder: "..." },
+  { value: "perplexity", label: "Perplexity", placeholder: "pplx-..." },
+  { value: "deepseek", label: "DeepSeek", placeholder: "..." },
+  { value: "azure", label: "Azure OpenAI", placeholder: "..." },
+  { value: "custom", label: "Custom (OpenAI-compatible)", placeholder: "..." },
+]
 
 interface UserProfile {
   id: string
@@ -61,6 +92,16 @@ export default function ProfilePage() {
     grade: "",
     subjects: [] as string[],
     studyGoal: "",
+  })
+  const [apiKeys, setApiKeys] = useState<ApiKeyConfig[]>([])
+  const [showApiKeyForm, setShowApiKeyForm] = useState(false)
+  const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set())
+  const [newKeyForm, setNewKeyForm] = useState({
+    label: "",
+    provider: "openai",
+    apiKey: "",
+    model: "",
+    baseUrl: "",
   })
   const { toast } = useToast()
   const router = useRouter()
@@ -100,6 +141,12 @@ export default function ProfilePage() {
         }
         setProfile(defaultProfile)
         localStorage.setItem(`ai-tutor-profile-${user.id}`, JSON.stringify(defaultProfile))
+      }
+
+      // Load API keys
+      const savedKeys = localStorage.getItem(`ai-tutor-api-keys-${user.id}`)
+      if (savedKeys) {
+        setApiKeys(JSON.parse(savedKeys))
       }
     }
   }, [])
@@ -165,6 +212,68 @@ export default function ProfilePage() {
     setFormData({ ...formData, subjects: updatedSubjects })
   }
 
+  const saveApiKeys = (keys: ApiKeyConfig[]) => {
+    if (!profile) return
+    setApiKeys(keys)
+    localStorage.setItem(`ai-tutor-api-keys-${profile.id}`, JSON.stringify(keys))
+  }
+
+  const handleAddApiKey = () => {
+    if (!newKeyForm.label.trim() || !newKeyForm.apiKey.trim() || !newKeyForm.provider) {
+      toast({ title: "Missing fields", description: "Label, provider, and API key are required.", variant: "destructive" })
+      return
+    }
+    if (apiKeys.length >= MAX_API_KEYS) {
+      toast({ title: "Limit reached", description: `You can add at most ${MAX_API_KEYS} API keys.`, variant: "destructive" })
+      return
+    }
+
+    const newKey: ApiKeyConfig = {
+      id: Date.now().toString(),
+      label: newKeyForm.label.trim(),
+      provider: newKeyForm.provider,
+      apiKey: newKeyForm.apiKey.trim(),
+      model: newKeyForm.model.trim() || undefined,
+      baseUrl: newKeyForm.baseUrl.trim() || undefined,
+      isActive: apiKeys.length === 0, // first key becomes active by default
+    }
+
+    saveApiKeys([...apiKeys, newKey])
+    setNewKeyForm({ label: "", provider: "openai", apiKey: "", model: "", baseUrl: "" })
+    setShowApiKeyForm(false)
+    toast({ title: "API key added", description: `"${newKey.label}" has been saved.` })
+  }
+
+  const handleDeleteApiKey = (id: string) => {
+    const updated = apiKeys.filter((k) => k.id !== id)
+    // If we deleted the active key, activate the first remaining one
+    if (!updated.some((k) => k.isActive) && updated.length > 0) {
+      updated[0].isActive = true
+    }
+    saveApiKeys(updated)
+    toast({ title: "API key removed" })
+  }
+
+  const handleSetActiveKey = (id: string) => {
+    const updated = apiKeys.map((k) => ({ ...k, isActive: k.id === id }))
+    saveApiKeys(updated)
+    toast({ title: "Active API key updated" })
+  }
+
+  const toggleKeyVisibility = (id: string) => {
+    setVisibleKeys((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const maskKey = (key: string) => {
+    if (key.length <= 8) return "••••••••"
+    return key.slice(0, 4) + "••••••••" + key.slice(-4)
+  }
+
   const availableSubjects = [
     "Mathematics",
     "Science",
@@ -219,10 +328,14 @@ export default function ProfilePage() {
         <div className="p-6">
           <div className="max-w-4xl mx-auto">
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 <TabsTrigger value="stats">Statistics</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="apikeys" className="flex items-center gap-1">
+                  <Key className="h-3 w-3" />
+                  API Keys
+                </TabsTrigger>
               </TabsList>
 
               {/* Profile Tab */}
@@ -505,6 +618,200 @@ export default function ProfilePage() {
                     <Button variant="outline" className="w-full bg-transparent">
                       Change Password
                     </Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* API Keys Tab */}
+              <TabsContent value="apikeys" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center space-x-2">
+                        <Key className="h-5 w-5" />
+                        <span>API Keys</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {apiKeys.length}/{MAX_API_KEYS}
+                        </Badge>
+                      </CardTitle>
+                      {apiKeys.length < MAX_API_KEYS && (
+                        <Button
+                          size="sm"
+                          onClick={() => setShowApiKeyForm((v) => !v)}
+                          className="flex items-center space-x-1"
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span>Add Key</span>
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      Add up to {MAX_API_KEYS} provider API keys. Your keys are stored locally in your browser and sent
+                      directly to the AI provider — they are never stored on any server.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Add Key Form */}
+                    {showApiKeyForm && (
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
+                        <h3 className="font-medium text-blue-900">New API Key</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label htmlFor="key-label">Label</Label>
+                            <Input
+                              id="key-label"
+                              placeholder="e.g. My OpenAI Key"
+                              value={newKeyForm.label}
+                              onChange={(e) => setNewKeyForm({ ...newKeyForm, label: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="key-provider">Provider</Label>
+                            <Select
+                              value={newKeyForm.provider}
+                              onValueChange={(v) => setNewKeyForm({ ...newKeyForm, provider: v })}
+                            >
+                              <SelectTrigger id="key-provider">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {PROVIDERS.map((p) => (
+                                  <SelectItem key={p.value} value={p.value}>
+                                    {p.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="key-value">API Key</Label>
+                          <Input
+                            id="key-value"
+                            type="password"
+                            placeholder={PROVIDERS.find((p) => p.value === newKeyForm.provider)?.placeholder || "..."}
+                            value={newKeyForm.apiKey}
+                            onChange={(e) => setNewKeyForm({ ...newKeyForm, apiKey: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label htmlFor="key-model">
+                              Model <span className="text-gray-400 text-xs">(optional)</span>
+                            </Label>
+                            <Input
+                              id="key-model"
+                              placeholder="e.g. gpt-4o, claude-3-5-sonnet-20241022"
+                              value={newKeyForm.model}
+                              onChange={(e) => setNewKeyForm({ ...newKeyForm, model: e.target.value })}
+                            />
+                          </div>
+                          {(newKeyForm.provider === "azure" || newKeyForm.provider === "custom") && (
+                            <div className="space-y-1">
+                              <Label htmlFor="key-baseurl">Base URL</Label>
+                              <Input
+                                id="key-baseurl"
+                                placeholder="https://..."
+                                value={newKeyForm.baseUrl}
+                                onChange={(e) => setNewKeyForm({ ...newKeyForm, baseUrl: e.target.value })}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex space-x-2 pt-1">
+                          <Button size="sm" onClick={handleAddApiKey}>
+                            <Save className="h-4 w-4 mr-1" />
+                            Save Key
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="bg-transparent"
+                            onClick={() => {
+                              setShowApiKeyForm(false)
+                              setNewKeyForm({ label: "", provider: "openai", apiKey: "", model: "", baseUrl: "" })
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Key List */}
+                    {apiKeys.length === 0 && !showApiKeyForm ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Key className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">No API keys configured yet.</p>
+                        <p className="text-xs mt-1">Click "Add Key" to get started.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {apiKeys.map((key) => {
+                          const providerLabel = PROVIDERS.find((p) => p.value === key.provider)?.label || key.provider
+                          const isVisible = visibleKeys.has(key.id)
+                          return (
+                            <div
+                              key={key.id}
+                              className={`rounded-lg border p-3 flex items-start justify-between gap-3 ${
+                                key.isActive ? "border-green-400 bg-green-50" : "border-gray-200 bg-white"
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <span className="font-medium text-sm truncate">{key.label}</span>
+                                  <Badge variant="outline" className="text-xs shrink-0">
+                                    {providerLabel}
+                                  </Badge>
+                                  {key.isActive && (
+                                    <Badge className="text-xs bg-green-600 shrink-0">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Active
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <code className="text-xs text-gray-600 font-mono">
+                                    {isVisible ? key.apiKey : maskKey(key.apiKey)}
+                                  </code>
+                                  <button
+                                    onClick={() => toggleKeyVisibility(key.id)}
+                                    className="text-gray-400 hover:text-gray-600"
+                                    aria-label={isVisible ? "Hide key" : "Show key"}
+                                  >
+                                    {isVisible ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                  </button>
+                                </div>
+                                {key.model && (
+                                  <p className="text-xs text-gray-500 mt-1">Model: {key.model}</p>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-1 shrink-0">
+                                {!key.isActive && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs bg-transparent"
+                                    onClick={() => handleSetActiveKey(key.id)}
+                                  >
+                                    Use
+                                  </Button>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleDeleteApiKey(key.id)}
+                                  aria-label="Delete key"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

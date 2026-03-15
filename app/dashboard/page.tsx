@@ -11,8 +11,18 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Brain, Send, Calendar, User, LogOut, MessageCircle, BookOpen, Clock, Lightbulb } from "lucide-react"
+import { Brain, Send, Calendar, User, LogOut, MessageCircle, BookOpen, Clock, Lightbulb, Key, AlertTriangle } from "lucide-react"
 import { useRouter } from "next/navigation"
+
+interface ApiKeyConfig {
+  id: string
+  label: string
+  provider: string
+  apiKey: string
+  model?: string
+  baseUrl?: string
+  isActive: boolean
+}
 
 interface Message {
   id: string
@@ -46,6 +56,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [reminders, setReminders] = useState<Reminder[]>([])
+  const [activeApiKey, setActiveApiKey] = useState<ApiKeyConfig | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
@@ -68,6 +79,16 @@ export default function DashboardPage() {
     if (savedReminders) {
       setReminders(JSON.parse(savedReminders))
     }
+
+    // Load active API key config
+    if (userData) {
+      const parsedUser = JSON.parse(userData)
+      const savedKeys: ApiKeyConfig[] = JSON.parse(
+        localStorage.getItem(`ai-tutor-api-keys-${parsedUser.id}`) || "[]",
+      )
+      const active = savedKeys.find((k) => k.isActive) || null
+      setActiveApiKey(active)
+    }
   }, [])
 
   useEffect(() => {
@@ -76,6 +97,17 @@ export default function DashboardPage() {
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return
+
+    if (!activeApiKey) {
+      const noKeyMessage: Message = {
+        id: Date.now().toString(),
+        content: "⚠️ No API key configured. Please go to your Profile → Settings → API Keys and add an API key to start chatting.",
+        sender: "ai",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, noKeyMessage])
+      return
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -98,6 +130,10 @@ export default function DashboardPage() {
         body: JSON.stringify({
           message: inputMessage,
           chatHistory: messages.slice(-10), // Send last 10 messages for context
+          apiKey: activeApiKey.apiKey,
+          provider: activeApiKey.provider,
+          model: activeApiKey.model,
+          baseUrl: activeApiKey.baseUrl,
         }),
       })
 
@@ -196,10 +232,27 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-500">Welcome back, {user?.name || "Student"}!</p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleLogout} className="flex items-center space-x-2 bg-transparent">
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
-            </Button>
+            <div className="flex items-center space-x-3">
+              {activeApiKey ? (
+                <Badge variant="secondary" className="flex items-center space-x-1 text-green-700 bg-green-100">
+                  <Key className="h-3 w-3" />
+                  <span>{activeApiKey.label}</span>
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="flex items-center space-x-1 text-yellow-700 border-yellow-400 bg-yellow-50 cursor-pointer"
+                  onClick={() => router.push("/profile")}
+                >
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>No API key — click to add</span>
+                </Badge>
+              )}
+              <Button variant="outline" onClick={handleLogout} className="flex items-center space-x-2 bg-transparent">
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -386,9 +439,21 @@ export default function DashboardPage() {
             </ScrollArea>
 
             <div className="border-t border-gray-200 p-4 bg-white">
+              {!activeApiKey && (
+                <div className="mb-3 flex items-center space-x-2 rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span>
+                    No API key configured.{" "}
+                    <button onClick={() => router.push("/profile")} className="font-medium underline">
+                      Add one in Profile → Settings
+                    </button>{" "}
+                    to start chatting.
+                  </span>
+                </div>
+              )}
               <div className="flex space-x-3">
                 <Input
-                  placeholder="Ask me anything about your studies..."
+                  placeholder={activeApiKey ? "Ask me anything about your studies..." : "Configure an API key to start chatting..."}
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}

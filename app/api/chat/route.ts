@@ -1,14 +1,61 @@
 import { streamText } from "ai"
 import { createOpenAI } from "@ai-sdk/openai"
+import { createAnthropic } from "@ai-sdk/anthropic"
+import { createGoogleGenerativeAI } from "@ai-sdk/google"
 
-const openai = createOpenAI({
-  apiKey:
-    "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",
-})
+const PROVIDER_BASE_URLS: Record<string, string> = {
+  groq: "https://api.groq.com/openai/v1",
+  together: "https://api.together.xyz/v1",
+  perplexity: "https://api.perplexity.ai",
+  deepseek: "https://api.deepseek.com/v1",
+  mistral: "https://api.mistral.ai/v1",
+}
+
+const DEFAULT_MODELS: Record<string, string> = {
+  openai: "gpt-4o",
+  anthropic: "claude-3-5-sonnet-20241022",
+  google: "gemini-1.5-pro",
+  groq: "llama-3.3-70b-versatile",
+  together: "meta-llama/Llama-3-70b-chat-hf",
+  perplexity: "llama-3.1-sonar-large-128k-online",
+  deepseek: "deepseek-chat",
+  mistral: "mistral-large-latest",
+  azure: "gpt-4o",
+  custom: "gpt-4o",
+}
+
+function createModel(provider: string, apiKey: string, model?: string, baseUrl?: string) {
+  const modelId = model || DEFAULT_MODELS[provider] || "gpt-4o"
+
+  if (provider === "anthropic") {
+    const anthropic = createAnthropic({ apiKey })
+    return anthropic(modelId)
+  }
+
+  if (provider === "google") {
+    const google = createGoogleGenerativeAI({ apiKey })
+    return google(modelId)
+  }
+
+  // OpenAI and OpenAI-compatible providers (groq, together, perplexity, deepseek, mistral, azure, custom)
+  const resolvedBaseUrl = baseUrl || PROVIDER_BASE_URLS[provider]
+  const openai = createOpenAI({
+    apiKey,
+    ...(resolvedBaseUrl ? { baseURL: resolvedBaseUrl } : {}),
+  })
+  return openai(modelId)
+}
 
 export async function POST(req: Request) {
   try {
-    const { message, chatHistory } = await req.json()
+    const { message, chatHistory, apiKey, provider, model, baseUrl } = await req.json()
+
+    if (!apiKey || !provider) {
+      return new Response(
+        JSON.stringify({ error: "No API key configured. Please add an API key in your Profile settings." }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      )
+    }
 
     // Create context from chat history
     const messages = chatHistory.map((msg: any) => ({
@@ -16,8 +63,10 @@ export async function POST(req: Request) {
       content: msg.content,
     }))
 
+    const aiModel = createModel(provider, apiKey, model, baseUrl)
+
     const result = await streamText({
-      model: openai("gpt-4o"),
+      model: aiModel,
       system: `You are an AI Personal Tutor designed to help students learn effectively. Your role is to:
 
 1. Provide clear, educational explanations tailored to the student's level
@@ -42,7 +91,7 @@ Keep responses concise but comprehensive. Always maintain an encouraging and edu
 
     return result.toTextStreamResponse()
   } catch (error) {
-    console.error("OpenAI API error:", error)
+    console.error("AI API error:", error)
     return new Response(JSON.stringify({ error: "Failed to generate response" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
