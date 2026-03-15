@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   User,
   ArrowLeft,
@@ -26,6 +27,7 @@ import {
   Shield,
   BarChart3,
   Zap,
+  Loader2,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -181,8 +183,11 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
+            <p className="text-gray-500 dark:text-gray-400">Loading profile...</p>
+          </div>
         </div>
       </ProtectedRoute>
     )
@@ -190,59 +195,70 @@ export default function ProfilePage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Button variant="ghost" onClick={() => router.push("/dashboard")} className="p-2">
-                <ArrowLeft className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                onClick={() => router.push("/dashboard")} 
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <ArrowLeft className="h-5 w-5 dark:text-gray-300" />
               </Button>
-              <div className="bg-purple-600 p-2 rounded-lg">
+              <div className="bg-gradient-to-br from-purple-600 to-indigo-600 p-2 rounded-xl shadow-lg shadow-purple-500/20">
                 <User className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">My Profile</h1>
-                <p className="text-sm text-gray-500">Manage your account and preferences</p>
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">My Profile</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Manage your account and preferences</p>
               </div>
             </div>
-            <Button
-              onClick={() => (isEditing ? handleSaveProfile() : setIsEditing(true))}
-              className="flex items-center space-x-2"
-            >
-              {isEditing ? <Save className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-              <span>{isEditing ? "Save Changes" : "Edit Profile"}</span>
-            </Button>
+            <div className="flex items-center space-x-3">
+              <ThemeToggle />
+              <Button
+                onClick={() => (isEditing ? handleSaveProfile() : setIsEditing(true))}
+                className={`flex items-center space-x-2 ${
+                  isEditing 
+                    ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700" 
+                    : "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                } shadow-lg`}
+              >
+                {isEditing ? <Save className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+                <span>{isEditing ? "Save Changes" : "Edit Profile"}</span>
+              </Button>
+            </div>
           </div>
         </header>
 
         <div className="p-6">
           <div className="max-w-4xl mx-auto">
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                <TabsTrigger value="stats">Statistics</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800">
+                <TabsTrigger value="profile" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">Profile</TabsTrigger>
+                <TabsTrigger value="stats" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">Statistics</TabsTrigger>
+                <TabsTrigger value="settings" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700">Settings</TabsTrigger>
               </TabsList>
 
               {/* Profile Tab */}
               <TabsContent value="profile" className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Profile Card */}
-                  <Card className="lg:col-span-1">
+                  <Card className="lg:col-span-1 dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader className="text-center">
                       <div className="flex justify-center mb-4">
-                        <Avatar className="h-24 w-24">
+                        <Avatar className="h-24 w-24 ring-4 ring-blue-100 dark:ring-blue-900">
                           <AvatarImage src={profile.avatar || "/placeholder.svg"} />
-                          <AvatarFallback className="text-2xl bg-blue-600 text-white">
+                          <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
                             {profile.name.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                       </div>
-                      <CardTitle className="text-xl">{profile.name}</CardTitle>
-                      <p className="text-sm text-gray-500">{profile.email}</p>
-                      <div className="flex justify-center mt-2">
-                        <Badge variant="secondary" className="flex items-center space-x-1">
+                      <CardTitle className="text-xl dark:text-white">{profile.name}</CardTitle>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{profile.email}</p>
+                      <div className="flex justify-center mt-3">
+                        <Badge variant="secondary" className="flex items-center space-x-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                           <Zap className="h-3 w-3" />
                           <span>{profile.stats.studyStreak} day streak</span>
                         </Badge>
@@ -251,32 +267,33 @@ export default function ProfilePage() {
                   </Card>
 
                   {/* Profile Details */}
-                  <Card className="lg:col-span-2">
+                  <Card className="lg:col-span-2 dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
-                      <CardTitle>Profile Information</CardTitle>
+                      <CardTitle className="dark:text-white">Profile Information</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="name">Full Name</Label>
+                          <Label htmlFor="name" className="dark:text-gray-300">Full Name</Label>
                           <Input
                             id="name"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             disabled={!isEditing}
+                            className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="grade">Grade/Level</Label>
+                          <Label htmlFor="grade" className="dark:text-gray-300">Grade/Level</Label>
                           <Select
                             value={formData.grade}
                             onValueChange={(value) => setFormData({ ...formData, grade: value })}
                             disabled={!isEditing}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                               <SelectValue placeholder="Select grade" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
                               <SelectItem value="elementary">Elementary</SelectItem>
                               <SelectItem value="middle">Middle School</SelectItem>
                               <SelectItem value="high">High School</SelectItem>
@@ -288,7 +305,7 @@ export default function ProfilePage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="bio">Bio</Label>
+                        <Label htmlFor="bio" className="dark:text-gray-300">Bio</Label>
                         <Textarea
                           id="bio"
                           placeholder="Tell us about yourself..."
@@ -296,28 +313,36 @@ export default function ProfilePage() {
                           onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                           disabled={!isEditing}
                           rows={3}
+                          className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="studyGoal">Study Goal</Label>
+                        <Label htmlFor="studyGoal" className="dark:text-gray-300">Study Goal</Label>
                         <Input
                           id="studyGoal"
                           placeholder="e.g., Improve math grades, prepare for SAT..."
                           value={formData.studyGoal}
                           onChange={(e) => setFormData({ ...formData, studyGoal: e.target.value })}
                           disabled={!isEditing}
+                          className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Subjects of Interest</Label>
+                        <Label className="dark:text-gray-300">Subjects of Interest</Label>
                         <div className="flex flex-wrap gap-2">
                           {availableSubjects.map((subject) => (
                             <Badge
                               key={subject}
                               variant={formData.subjects.includes(subject) ? "default" : "outline"}
-                              className={`cursor-pointer ${!isEditing ? "pointer-events-none" : ""}`}
+                              className={`cursor-pointer transition-all ${
+                                !isEditing ? "pointer-events-none" : "hover:scale-105"
+                              } ${
+                                formData.subjects.includes(subject) 
+                                  ? "bg-blue-600 hover:bg-blue-700" 
+                                  : "dark:border-gray-500 dark:text-gray-300"
+                              }`}
                               onClick={() => isEditing && handleSubjectToggle(subject)}
                             >
                               {subject}
@@ -333,58 +358,66 @@ export default function ProfilePage() {
               {/* Statistics Tab */}
               <TabsContent value="stats" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <Card>
+                  <Card className="dark:bg-gray-800 dark:border-gray-700 hover:shadow-lg transition-all">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-600">Study Sessions</p>
-                          <p className="text-2xl font-bold text-blue-600">{profile.stats.totalSessions}</p>
+                          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Study Sessions</p>
+                          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{profile.stats.totalSessions}</p>
                         </div>
-                        <BookOpen className="h-8 w-8 text-blue-600" />
+                        <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-xl">
+                          <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="dark:bg-gray-800 dark:border-gray-700 hover:shadow-lg transition-all">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-600">Questions Asked</p>
-                          <p className="text-2xl font-bold text-green-600">{profile.stats.totalQuestions}</p>
+                          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Questions Asked</p>
+                          <p className="text-3xl font-bold text-green-600 dark:text-green-400">{profile.stats.totalQuestions}</p>
                         </div>
-                        <MessageCircle className="h-8 w-8 text-green-600" />
+                        <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-xl">
+                          <MessageCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="dark:bg-gray-800 dark:border-gray-700 hover:shadow-lg transition-all">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-600">Tasks Completed</p>
-                          <p className="text-2xl font-bold text-purple-600">{profile.stats.completedTasks}</p>
+                          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tasks Completed</p>
+                          <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{profile.stats.completedTasks}</p>
                         </div>
-                        <Trophy className="h-8 w-8 text-purple-600" />
+                        <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-xl">
+                          <Trophy className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="dark:bg-gray-800 dark:border-gray-700 hover:shadow-lg transition-all">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-600">Study Streak</p>
-                          <p className="text-2xl font-bold text-orange-600">{profile.stats.studyStreak} days</p>
+                          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Study Streak</p>
+                          <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{profile.stats.studyStreak} days</p>
                         </div>
-                        <Zap className="h-8 w-8 text-orange-600" />
+                        <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-xl">
+                          <Zap className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
-                <Card>
+                <Card className="dark:bg-gray-800 dark:border-gray-700">
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
+                    <CardTitle className="flex items-center space-x-2 dark:text-white">
                       <BarChart3 className="h-5 w-5" />
                       <span>Learning Progress</span>
                     </CardTitle>
@@ -392,25 +425,36 @@ export default function ProfilePage() {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Overall Progress</span>
-                        <span className="text-sm text-gray-500">75%</span>
+                        <span className="text-sm font-medium dark:text-gray-300">Overall Progress</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">75%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: "75%" }}></div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                        <div 
+                          className="bg-gradient-to-r from-blue-600 to-indigo-600 h-3 rounded-full transition-all duration-500" 
+                          style={{ width: "75%" }}
+                        ></div>
                       </div>
                     </div>
 
-                    <div className="mt-6 space-y-3">
+                    <div className="mt-6 space-y-4">
                       {formData.subjects.slice(0, 3).map((subject, index) => {
                         const progress = [85, 70, 60][index] || 50
+                        const colors = [
+                          "from-green-500 to-emerald-500",
+                          "from-purple-500 to-pink-500",
+                          "from-orange-500 to-red-500"
+                        ]
                         return (
                           <div key={subject} className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">{subject}</span>
-                              <span className="text-sm text-gray-500">{progress}%</span>
+                              <span className="text-sm font-medium dark:text-gray-300">{subject}</span>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{progress}%</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-1.5">
-                              <div className="bg-green-600 h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div 
+                                className={`bg-gradient-to-r ${colors[index] || "from-blue-500 to-cyan-500"} h-2 rounded-full transition-all duration-500`} 
+                                style={{ width: `${progress}%` }}
+                              ></div>
                             </div>
                           </div>
                         )
@@ -422,18 +466,18 @@ export default function ProfilePage() {
 
               {/* Settings Tab */}
               <TabsContent value="settings" className="space-y-6">
-                <Card>
+                <Card className="dark:bg-gray-800 dark:border-gray-700">
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
+                    <CardTitle className="flex items-center space-x-2 dark:text-white">
                       <Bell className="h-5 w-5" />
                       <span>Notifications</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                       <div>
-                        <p className="font-medium">Push Notifications</p>
-                        <p className="text-sm text-gray-500">Receive notifications about your studies</p>
+                        <p className="font-medium dark:text-white">Push Notifications</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Receive notifications about your studies</p>
                       </div>
                       <Switch
                         checked={profile.preferences.notifications}
@@ -441,10 +485,10 @@ export default function ProfilePage() {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                       <div>
-                        <p className="font-medium">Study Reminders</p>
-                        <p className="text-sm text-gray-500">Get reminded about upcoming tasks</p>
+                        <p className="font-medium dark:text-white">Study Reminders</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Get reminded about upcoming tasks</p>
                       </div>
                       <Switch
                         checked={profile.preferences.studyReminders}
@@ -452,10 +496,10 @@ export default function ProfilePage() {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                       <div>
-                        <p className="font-medium">Weekly Reports</p>
-                        <p className="text-sm text-gray-500">Receive weekly progress summaries</p>
+                        <p className="font-medium dark:text-white">Weekly Reports</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Receive weekly progress summaries</p>
                       </div>
                       <Switch
                         checked={profile.preferences.weeklyReports}
@@ -465,44 +509,46 @@ export default function ProfilePage() {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="dark:bg-gray-800 dark:border-gray-700">
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
+                    <CardTitle className="flex items-center space-x-2 dark:text-white">
                       <Palette className="h-5 w-5" />
                       <span>Appearance</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                       <div>
-                        <p className="font-medium">Dark Mode</p>
-                        <p className="text-sm text-gray-500">Switch to dark theme</p>
+                        <p className="font-medium dark:text-white">Theme</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Use the toggle in the header to switch themes</p>
                       </div>
-                      <Switch
-                        checked={profile.preferences.darkMode}
-                        onCheckedChange={(checked) => handlePreferenceChange("darkMode", checked)}
-                      />
+                      <ThemeToggle />
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="dark:bg-gray-800 dark:border-gray-700">
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
+                    <CardTitle className="flex items-center space-x-2 dark:text-white">
                       <Shield className="h-5 w-5" />
                       <span>Account</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div>
-                      <p className="font-medium mb-2">Email</p>
-                      <p className="text-sm text-gray-600">{profile.email}</p>
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                      <p className="font-medium mb-1 dark:text-white">Email</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{profile.email}</p>
                     </div>
-                    <div>
-                      <p className="font-medium mb-2">Account Created</p>
-                      <p className="text-sm text-gray-600">{new Date(profile.id).toLocaleDateString()}</p>
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                      <p className="font-medium mb-1 dark:text-white">Account Created</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {new Date(parseInt(profile.id)).toLocaleDateString()}
+                      </p>
                     </div>
-                    <Button variant="outline" className="w-full bg-transparent">
+                    <Button 
+                      variant="outline" 
+                      className="w-full bg-transparent dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
                       Change Password
                     </Button>
                   </CardContent>
