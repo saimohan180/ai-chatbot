@@ -1,30 +1,40 @@
-# AI Personal Tutor
+# AI Chatbot
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+A fresh start for building an AI Chatbot application.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/kumarbhanuravipati26-gmailcoms-projects/v0-ai-personal-tutor)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/0fPgdIdhqa6)
+## Getting Started
 
-## Overview
+First, install dependencies:
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+```bash
+npm install
+```
 
-## Deployment
+Then, run the development server:
 
-Your project is live at:
+```bash
+npm run dev
+```
 
-**[https://vercel.com/kumarbhanuravipati26-gmailcoms-projects/v0-ai-personal-tutor](https://vercel.com/kumarbhanuravipati26-gmailcoms-projects/v0-ai-personal-tutor)**
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Build your app
+## Project Structure
 
-Continue building your app on:
+```
+├── app/
+│   ├── layout.tsx    # Root layout
+│   ├── page.tsx      # Home page
+│   └── globals.css   # Global styles
+├── public/           # Static assets
+└── package.json      # Dependencies and scripts
+```
 
-**[https://v0.app/chat/projects/0fPgdIdhqa6](https://v0.app/chat/projects/0fPgdIdhqa6)**
+## Built With
 
-## How It Works
+- [Next.js](https://nextjs.org/) - React framework
+- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+## Development
+
+This is a clean slate. Start building your application from scratch!
